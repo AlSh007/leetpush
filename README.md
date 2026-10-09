@@ -6,7 +6,7 @@ A Chrome/Chromium (Manifest V3) extension: submit on LeetCode, and once the resu
 
 ## 🎬 Demo
 
-[![Demo video: LeetCode to GitHub](docs/demo/brag.jpg)](docs/demo/brag.mp4)
+https://github.com/user-attachments/assets/9b15e1a8-d598-4378-8547-7a4c48dec5c6
 
 *The UI shown in the video is an illustrative recreation, not a screen recording.*
 
@@ -147,7 +147,7 @@ Given an array of positive integers nums, remove the smallest subarray...
 
 ## 🤖 AI Features (optional)
 
-A small floating 🤖 button appears on every LeetCode problem page. Click it to expand a panel with two on-demand tools, powered by whichever provider you picked in the popup - [Groq](https://console.groq.com/) (free tier) or OpenAI:
+A small floating spark-icon button ("LeetCode AI Assistant") appears on every LeetCode problem page. Click it to expand a panel with two on-demand tools, powered by whichever provider you picked in the popup - [Groq](https://console.groq.com/) (free tier) or OpenAI:
 
 - **Analyze Complexity** — reads whatever code is currently in the editor (draft or accepted, via the same Monaco-bridge extraction used for pushes) and returns its time and space complexity in Big-O notation with a short justification.
 - **Hint** — gives a progressive hint for the current problem. Each click escalates: level 1 is a conceptual nudge, level 2 describes the general approach, level 3 adds detail on data structures and edge cases. It's capped at level 3 and never returns code or pseudocode, so it can't spoil the full solution. The level resets automatically when you move to a different problem.
