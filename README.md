@@ -2,6 +2,14 @@
 
 Automatically push your accepted LeetCode solutions to GitHub with complete formatting preservation!
 
+A Chrome/Chromium (Manifest V3) extension: submit on LeetCode, and once the result is **Accepted** it commits your solution plus a generated README to a GitHub repo of your choice, one folder per problem.
+
+## 🎬 Demo
+
+[![Demo video: LeetCode to GitHub](docs/demo/brag.jpg)](docs/demo/brag.mp4)
+
+*The UI shown in the video is an illustrative recreation, not a screen recording.*
+
 ## ✨ Features
 
 - 🚀 **Automatic Push** - Solutions are pushed to GitHub automatically when accepted
@@ -13,13 +21,16 @@ Automatically push your accepted LeetCode solutions to GitHub with complete form
 
 ## 📋 Table of Contents
 
-- [Installation](#installation)
-- [Setup](#setup)
-- [Usage](#usage)
-- [What Gets Pushed](#what-gets-pushed)
+- [Demo](#-demo)
+- [Installation](#-installation)
+- [Usage](#-usage)
+- [What Gets Pushed](#-what-gets-pushed)
 - [AI Features](#-ai-features-optional)
-- [Troubleshooting](#troubleshooting)
-- [How It Works](#how-it-works)
+- [Privacy & Security](#-privacy--security)
+- [Troubleshooting](#-troubleshooting)
+- [How It Works](#-how-it-works)
+- [Limitations](#-limitations)
+- [Tests](#-tests)
 
 ## 🔧 Installation
 
@@ -28,13 +39,15 @@ Automatically push your accepted LeetCode solutions to GitHub with complete form
 1. Go to: [GitHub Settings → Tokens](https://github.com/settings/tokens)
 2. Click **"Generate new token"** → **"Generate new token (classic)"**
 3. Give it a name: `LeetCode Extension`
-4. Select scope: ✅ **`repo`** (Full control of private repositories)
+4. Select scope: ✅ **`repo`** (needed for private repos; `public_repo` is enough if your solutions repo is public). A fine-grained token with **Contents: Read and write** on that one repo also works, since the extension only uses GitHub's repository contents API.
 5. Click **"Generate token"**
 6. **COPY THE TOKEN** immediately (you won't see it again!)
 
 ### 2. Install the Extension
 
-1. Open Chrome and navigate to: `chrome://extensions/`
+Create the (empty or existing) repository you want the solutions in first; the extension does not create it.
+
+1. Open Chrome (or any Chromium browser) and navigate to: `chrome://extensions/`
 2. Enable **"Developer mode"** (toggle in top-right corner)
 3. Click **"Load unpacked"**
 4. Select the `leetcode_extension` folder
@@ -43,7 +56,7 @@ Automatically push your accepted LeetCode solutions to GitHub with complete form
 ### 3. Configure the Extension
 
 1. Click the **extension icon** in Chrome toolbar (puzzle piece icon)
-2. Enter your details:
+2. Enter your details (they are saved with the **Save** button):
    - **Repository**: `your-username/repo-name` (e.g., `john/leetcode-solutions`)
    - **Token**: Paste your GitHub Personal Access Token
    - **AI provider + key** *(optional)*: pick **Groq** (free, via [console.groq.com](https://console.groq.com/keys)) or **OpenAI** (via [platform.openai.com](https://platform.openai.com/api-keys)) and paste that provider's key to enable the AI features below. Leave both blank and everything else still works exactly the same.
@@ -57,7 +70,7 @@ Automatically push your accepted LeetCode solutions to GitHub with complete form
 
 1. **Navigate** to any LeetCode problem (e.g., https://leetcode.com/problems/two-sum/)
 2. **Write** your solution in the code editor
-3. **Click Submit** button
+3. **Click Submit** button (a plain "Run" does nothing)
 4. **Wait** for "Accepted" result
 5. **Done!** Check your GitHub repo - the solution is automatically pushed
 
@@ -73,8 +86,15 @@ Expected console output:
 ```
 [LeetCode Extension] 🚀 Submit button clicked!
 [LeetCode Extension] Code Extraction Summary: {method: "monaco-model-bridge", lines: 15, editorReportedLines: 15, ...}
+[LeetCode Extension] Accepted status detected
 [LeetCode Extension] Attempting to push to GitHub...
-[LeetCode Extension] ✅ Successfully pushed to GitHub!
+[LeetCode Extension] GitHub push accepted, processing in background...
+```
+
+The push itself runs in the background service worker, so the final confirmation (and any GitHub error) shows up in *its* console, not the page's - see [Troubleshooting](#-troubleshooting):
+
+```
+[LeetCode Extension BG] ✅ GitHub upsert completed successfully!
 ```
 
 ## 📦 What Gets Pushed?
@@ -86,6 +106,8 @@ Make_Sum_Divisible_by_P/
 ├── Make_Sum_Divisible_by_P.py
 └── README.md
 ```
+
+The folder and file names come from the problem title in the page's tab title, with spaces replaced by underscores and characters GitHub paths dislike replaced by `_`. The extension is picked from the editor's language (`.py`, `.java`, `.cpp`, `.js`, `.ts`, `.go`, `.rs`, ...). Each push makes two commits through the GitHub API: `Add/update README for <folder>` and `Add/update solution <file>`.
 
 ### Solution File
 Your complete code with:
@@ -100,7 +122,7 @@ Auto-generated with:
 - Tags (Array, Dynamic Programming, etc.)
 - Acceptance rate
 - Link to original LeetCode problem
-- List of solution files
+- Name of the solution file just pushed (the README is regenerated on each push, so it lists the latest file rather than accumulating every language)
 
 **Example README:**
 ```markdown
@@ -132,6 +154,13 @@ A small floating 🤖 button appears on every LeetCode problem page. Click it to
 
 **This is entirely optional.** If no key is configured for the selected provider, clicking either button just shows "\<Provider\> API key not set" in the panel — GitHub pushing, code extraction, and everything else keep working normally regardless.
 
+## 🔒 Privacy & Security
+
+- Your repo name, GitHub token and (optional) AI keys are saved in `chrome.storage.sync`. That means they are **not encrypted by the extension** and, if Chrome sync is on, they sync with your Google account across your signed-in browsers. Use a token limited to the one repo (or the minimum scope above) and revoke it if you stop using the extension.
+- The token is only sent to `api.github.com`; AI keys only to their own provider. Host permissions are limited to `leetcode.com`, `api.github.com`, `api.groq.com` and `api.openai.com`.
+- The AI features, if enabled, send the problem text and your current code to the selected provider. Nothing is sent to any provider if you leave the keys blank.
+- Never commit a token to this repo (`pat.txt` and `*.pat` are git-ignored).
+
 ## 🐛 Troubleshooting
 
 ### Code Not Pushing to GitHub
@@ -145,10 +174,10 @@ A small floating 🤖 button appears on every LeetCode problem page. Click it to
 
 **Common issues:**
 
-- ❌ **"Repo or token not set"** → Configure extension via popup
-- ❌ **"GitHub API failed (401)"** → Invalid/expired token, create a new one
-- ❌ **"GitHub API failed (404)"** → Repository doesn't exist or wrong name format
-- ❌ **"No pending submission found"** → Must click Submit BEFORE solution is accepted
+- ❌ **"Repo or token not set"** (page console) → Configure extension via popup
+- ❌ **`GitHub PUT/GET failed (401)`** → Invalid/expired token, create a new one
+- ❌ **`GitHub PUT/GET failed (404)`** → Repository doesn't exist, wrong `owner/repo` format, or the token can't see it
+- ❌ **"No pending submission found"** → Must click Submit on this page BEFORE the result is accepted (the Submit click is remembered for 30 seconds)
 
 ### Only Part of the Code Was Pushed
 
@@ -192,7 +221,7 @@ If you see:
 [LeetCode Extension] ⚠️ Could not detect language, defaulting to py (Python)
 ```
 
-The extension will use `.py` as default. This is fine if you're coding in Python!
+The extension will use `.py` as default. This is fine if you're coding in Python, otherwise the file gets the wrong extension.
 
 ### Nothing Happens
 
@@ -201,7 +230,7 @@ The extension will use `.py` as default. This is fine if you're coding in Python
 - ✅ You clicked **Submit** button (not just "Run")
 - ✅ Solution got **"Accepted"** status
 - ✅ Repository and token are configured in extension popup
-- ✅ GitHub repository exists and token has `repo` permissions
+- ✅ GitHub repository exists and the token can write to it (see the service worker console for the exact GitHub error)
 
 ## 🔬 How It Works
 
@@ -234,23 +263,31 @@ because a truncated file looks like a successful push.
 ### Validation
 
 - **Line Count Cross-Check**: Warns if the snapshot disagrees with the model
-- **Python Validation**: Verifies indentation and structure
-- **Completeness Check**: Warns if code seems too short
+- **Python Validation**: Warns if the code has no indentation or looks suspiciously short
+- **Empty Check**: Aborts the push if the code or problem title is empty
 
 ### Push Process
 
 1. **Submit Click**: Captures problem metadata
-2. **Accepted Detection**: Extracts code using best available method
-3. **Validation**: Checks order, indentation, completeness
-4. **GitHub API**: Creates/updates folder with solution and README
-5. **Confirmation**: Logs success in console
+2. **Accepted Detection**: Watches the page for an "Accepted" result and reads the Monaco model
+3. **Validation**: Warns (console only) on a line-count mismatch or Python code with no indentation; refuses to push if the buffer can't be read or is empty
+4. **GitHub API**: The background service worker creates/updates the solution and README via the contents API (retrying on sha conflicts)
+5. **Confirmation**: Logs success or the GitHub error in the service worker console
 
 ## 📝 Notes
 
-- **Supported Languages**: Python, Java, C++, JavaScript, TypeScript, and all LeetCode languages
+- **Supported Languages**: Python, Java, C/C++, C#, JavaScript, TypeScript, Go, Rust, Kotlin, Swift, Ruby, PHP, Scala, Dart, SQL dialects, Bash, Racket, Erlang and Elixir (the languages the extension recognises and maps to a file extension)
 - **File Naming**: Problem title with underscores (e.g., `Two_Sum.py`)
 - **Updates**: Re-submitting updates the existing file (no duplicates)
-- **Privacy**: Token is stored locally in Chrome storage only
+- **Privacy**: see [Privacy & Security](#-privacy--security)
+
+## ⚠️ Limitations
+
+- Only `https://leetcode.com/*` is supported (not `leetcode.cn`).
+- Pushes only happen for submissions you click **Submit** on in the current page session; an old accepted submission you merely open will not be pushed.
+- Problem metadata (difficulty, tags, acceptance, description) is read from LeetCode's page markup with best-effort selectors, so it can come back empty or wrong when LeetCode changes its frontend. The code capture does not depend on those selectors.
+- GitHub failures are logged to the service worker console only; there is no in-page notification.
+- The extension is loaded unpacked; it is not published on the Chrome Web Store.
 
 ## 🧪 Tests
 
@@ -258,9 +295,9 @@ because a truncated file looks like a successful push.
 node test/bridge.test.js
 ```
 
-No dependencies. The tests load `monaco-bridge.js` and `content.js` into **separate**
+Needs only Node.js, no packages. The tests load `monaco-bridge.js` and `content.js` into **separate**
 JS contexts sharing one DOM, mirroring Chrome's isolated/MAIN world split, and assert
-that a 200-line file rendered 20 lines at a time is captured in full.
+that a 200-line file rendered 20 lines at a time is captured in full. They also cover the hint-level cap and that a failing AI panel doesn't break extraction.
 
 ## 🤝 Contributing
 
