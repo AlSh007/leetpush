@@ -50,7 +50,7 @@ Create the (empty or existing) repository you want the solutions in first; the e
 1. Open Chrome (or any Chromium browser) and navigate to: `chrome://extensions/`
 2. Enable **"Developer mode"** (toggle in top-right corner)
 3. Click **"Load unpacked"**
-4. Select the `leetcode_extension` folder
+4. Select the `leetpush` folder
 5. The extension should appear in your extensions list
 
 ### 3. Configure the Extension
